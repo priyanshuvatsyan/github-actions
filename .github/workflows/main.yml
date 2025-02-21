@@ -1,1 +1,32 @@
-Name: Deploy nodejs app
+name: Deploy nodejs app
+
+on: 
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkOut code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmot 600 ~/.ssh/id_rsa
+          ssh-keyscan -H your-server-ip >> ~/.ssh/known_hosts
+      
+      - name: DEploy to server
+        run: |
+          ssh ubuntu@ec2-16-171-47-135.eu-north-1.compute.amazonaws.com << 'EOF'
+            cd /home/ubuntu/github-actions || exit 1
+            git pull origin master
+            npm install
+            pm2 restart my-node-app || pm2 start app.js --name my-node-app
+            pm2 save
+          EOF
+  
